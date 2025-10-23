@@ -1,0 +1,80 @@
+########################################
+# OS 공통 / 편집기
+########################################
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*
+*.swp
+*.tmp
+*.temp
+*.bak
+*.orig
+*.log
+
+# VS Code (선택)
+.vscode/
+
+########################################
+# Visual Studio / MSBuild 산출물
+########################################
+# 솔루션/프로젝트 캐시
+.vs/
+*.VC.db
+*.VC.opendb
+ipch/
+
+# 사용자/환경 종속 파일
+*.user
+*.userosscache
+*.suo
+*.rsuser
+
+# 빌드 아티팩트
+[Bb]uild/
+[Bb]in/
+[Oo]bj/
+x64/
+x86/
+ARM*/
+[Aa][Rr][Mm]64/
+Debug*/
+Release*/
+*.pdb
+*.ilk
+*.exp
+*.iobj
+*.ipdb
+*.idb
+*.tlog
+*.lastcodeanalysissucceeded
+*.lastbuildstate
+*.cachefile
+*.pch
+*.rsp
+
+# 링커/배포 산물
+*.exe
+*.dll
+*.lib
+*.appx
+*.msix
+*.msixupload
+*.msi
+*.cab
+*.map
+
+# 프로파일/커버리지(있다면)
+*.gcda
+*.gcno
+*.gcov
+*.coverage
+*.cov
+
+########################################
+# C/C++ 생성물 기타
+########################################
+*.obj
+*.o
+*.lst
+*.out
