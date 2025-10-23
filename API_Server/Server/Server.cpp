@@ -5,6 +5,16 @@
 #pragma comment(lib, "ws2_32.lib")
 #define PORT 8080
 
+static int sendall(SOCKET s, const char* buf, int len) {
+    int total = 0;
+    while (total < len) {
+        int n = send(s, buf + total, len - total, 0);
+        if (n == SOCKET_ERROR) return SOCKET_ERROR;
+        total += n;
+    }
+    return total;
+}
+
 int main(void) {
     WSADATA wsa;
     SOCKET server_socket = INVALID_SOCKET, client_socket = INVALID_SOCKET;
@@ -82,14 +92,4 @@ int main(void) {
     closesocket(server_socket);
     WSACleanup();
     return 0;
-}
-
-static int sendall(SOCKET s, const char* buf, int len) {
-    int total = 0;
-    while (total < len) {
-        int n = send(s, buf + total, len - total, 0);
-        if (n == SOCKET_ERROR) return SOCKET_ERROR;
-        total += n;
-    }
-    return total;
 }
