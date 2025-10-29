@@ -13,6 +13,9 @@
 #define SERVER_ID   "MAILAPI"      // 서버 식별자
 #define EXPECT_HOST ""			   // 기대하는 Host 헤더 값 (빈값이면 검사 안함)
 
+#define MAIL_INDEX_INCLUDES_CURRENT 1 
+// 메일 인덱스 계산 시, 이번에 저장하는 메일도 포함할지 여부
+
 // =================== 유틸 ===================
 
 // 모든 데이터 전송 
@@ -85,6 +88,35 @@ static void json_escape(const char* src, char* dst, int dstsz) {
         else if (c == '\r') { if (i + 2 >= dstsz) break; dst[i++] = '\\'; dst[i++] = 'r'; }
         else if (c == '\t') { if (i + 2 >= dstsz) break; dst[i++] = '\\'; dst[i++] = 't'; }
         else dst[i++] = c;
+    }
+    dst[i] = 0;
+}
+
+// user가 보낸 메일 "개수"를 index.json에서 카운트
+static int count_mails_for_user(const char* user) {
+    char buf[RECV_BUF];
+    if (read_text("data\\mailbox\\index.json", buf, sizeof(buf)) < 0) return 0;
+    int count = 0;
+    const char* p = buf;
+    char key[512]; _snprintf(key, sizeof(key), "\"user\":\"%s\"", user);
+    while ((p = strstr(p, key)) != NULL) { count++; p += strlen(key); }
+    return count;
+}
+
+// 이번 저장에서 쓸 mail_index 계산
+static int compute_mail_index(const char* user) {
+    int prev = count_mails_for_user(user);
+    return MAIL_INDEX_INCLUDES_CURRENT ? (prev + 1) : prev;
+}
+
+// 파일명에 쓸 user를 안전하게 변환(공백/슬래시 등 제거)
+static void sanitize_id(const char* src, char* dst, int dstsz) {
+    int i = 0;
+    for (; *src && i < dstsz - 1; src++) {
+        char c = *src;
+        if (c == '\\' || c == '/' || c == ':' || c == '*' || c == '?' || c == '\"' ||
+            c == '<' || c == '>' || c == '|' || c == ' ') c = '_';
+        dst[i++] = c;
     }
     dst[i] = 0;
 }
@@ -183,7 +215,7 @@ static void init_index_if_missing(void) {
 }
 
 // index.json 에 items 뒤에 1건 추가(간단 문자열 조작; 원자적 갱신)
-static int index_append(const char* id, const char* user, const char* iso) {
+static int index_append(const char* user, const char* iso, int mail_index, const char* title) {
     char buf[RECV_BUF];
     if (read_text("data\\mailbox\\index.json", buf, sizeof(buf)) < 0) return -1;
 
@@ -204,9 +236,12 @@ static int index_append(const char* id, const char* user, const char* iso) {
     char* end = strrchr(buf, ']'); if (!end) return -1;
     int comma = (end - 1 >= buf && *(end - 1) != '[');
 
+    char escTitle[RECV_BUF]; json_escape(title, escTitle, sizeof(escTitle));
+
     char add[1024];
     snprintf(add, sizeof(add),
-        "%s{\"id\":\"%s\",\"user\":\"%s\",\"date\":\"%s\"}]}", comma ? "," : "", id, user, iso);
+        "%s{\"user\":\"%s\",\"date\":\"%s\",\"mail_index\":%d,\"title\":\"%s\"}]}",
+        comma ? "," : "", user, iso, mail_index, escTitle);
 
     int prefix_len = (int)(end - buf);
     char out[RECV_BUF];
@@ -235,46 +270,54 @@ static void handle_get_list(SOCKET c, const char* req) {
 	http_send(c, 200, "OK", "application/json", json);
 }
 
-// GET /api/mail  (헤더: X-Mail-Id)
+// GET /api/mail  (헤더: X-User, X-Mail-Id)
 static void handle_get_mail(SOCKET c, const char* req) {
-    char id[256] = { 0 };
-    if (get_header_ci(req, "X-Mail-Id", id, sizeof(id)) != 0) {
-        http_send(c, 400, "Bad Request", "application/json", "{\"ok\":false,\"error\":\"missing X-Mail-Id\"}");
+    char user[256] = { 0 }, idxStr[64] = { 0 };
+    if (get_header_ci(req, "X-User", user, sizeof(user)) != 0 ||
+        get_header_ci(req, "X-Mail-Index", idxStr, sizeof(idxStr)) != 0) {
+        http_send(c, 400, "Bad Request", "application/json",
+            "{\"ok\":false,\"error\":\"missing X-User or X-Mail-Index\"}");
         return;
     }
-    // 경로 순회 방지
-    if (strstr(id, "..") || strchr(id, '/') || strchr(id, '\\')) {
-        http_send(c, 400, "Bad Request", "application/json", "{\"ok\":false,\"error\":\"invalid id\"}");
+    int mail_index = atoi(idxStr);
+    if (mail_index <= 0 && MAIL_INDEX_INCLUDES_CURRENT) {
+        http_send(c, 400, "Bad Request", "application/json",
+            "{\"ok\":false,\"error\":\"invalid mail_index\"}");
         return;
     }
+    char safeUser[256]; sanitize_id(user, safeUser, sizeof(safeUser));
     char path[512], content[RECV_BUF];
-    snprintf(path, sizeof(path), "data\\mailbox\\%s.json", id); // .msg --> .json
+    snprintf(path, sizeof(path), "data\\mailbox\\%s_%d.json", safeUser, mail_index); // .msg --> .json
     if (read_text(path, content, sizeof(content)) < 0) {
         http_send(c, 404, "Not Found", "application/json", "{\"ok\":false,\"error\":\"not found\"}");
         return;
     }
     char resp[RECV_BUF];
-    snprintf(resp, sizeof(resp), "{\"ok\":true,\"id\":\"%s\",\"raw\":\"%s\"}", id, content);
+    snprintf(resp, sizeof(resp), "{\"ok\":true,\"id\":\"%s\",\"raw\":\"%s\"}", safeUser, content);
     http_send(c, 200, "OK", "application/json", resp);
 }
 
-// POST /api/send  (JSON: {"user":"...","mailId":"...","body":"..."})
+// POST /api/send  (JSON: {"user":"...","title":"...","body":"..."})
 static void handle_post_send(SOCKET c, const char* req) {
     const char* he = find_header_end(req);
     const char* body = he ? he + 4 : "";
-    char user[256] = { 0 }, mailId[256] = { 0 }, text[1024] = { 0 };
+    char user[256] = { 0 }, title[256] = { 0 }, text[1024] = { 0 };
 
     if (json_extract(body, "user", user, sizeof(user)) != 0 ||
-        json_extract(body, "mailId", mailId, sizeof(mailId)) != 0 ||
+        json_extract(body, "title", title, sizeof(title)) != 0 ||
         json_extract(body, "body", text, sizeof(text)) != 0) {
         http_send(c, 400, "Bad Request", "application/json", "{\"ok\":false,\"error\":\"invalid json fields\"}");
         return;
     }
-    if (strstr(mailId, "..") || strchr(mailId, '/') || strchr(mailId, '\\')) {
-        http_send(c, 400, "Bad Request", "application/json", "{\"ok\":false,\"error\":\"invalid mailId\"}");
+    if (strstr(title, "..") || strchr(title, '/') || strchr(title, '\\')) {
+        http_send(c, 400, "Bad Request", "application/json", "{\"ok\":false,\"error\":\"invalid title\"}");
         return;
     }
     ensure_dirs(); init_index_if_missing();
+
+	// mail_index 계산
+	int mail_index = compute_mail_index(user);
+
     // UTC 시각
     char iso[64]; {
         time_t t = time(NULL); struct tm tm;
@@ -288,10 +331,10 @@ static void handle_post_send(SOCKET c, const char* req) {
     //char msg[RECV_BUF];
     //snprintf(msg, sizeof(msg),
     //    "User: %s\r\nMail-Id: %s\r\nDate: %s\r\n\r\n%s\r\n",
-    //    user, mailId, iso, text);
+    //    user, title, iso, text);
 
     //// 파일 저장
-    //char path[512]; snprintf(path, sizeof(path), "data\\mailbox\\%s.msg", mailId);
+    //char path[512]; snprintf(path, sizeof(path), "data\\mailbox\\%s.msg", title);
     //if (write_text(path, msg) != 0) {
     //    http_send(c, 500, "Internal Server Error", "application/json", "{\"ok\":false,\"error\":\"write msg\"}");
     //    return;
@@ -300,24 +343,28 @@ static void handle_post_send(SOCKET c, const char* req) {
     // 원문 이스케이프 --> JSON 문서 생성
     char escBody[RECV_BUF];
     json_escape(text, escBody, sizeof(escBody));
+    char escTitle[RECV_BUF]; json_escape(title, escTitle, sizeof(escTitle));
+    json_escape(text, escTitle, sizeof(escTitle));
 
     char doc[RECV_BUF];
     snprintf(doc, sizeof(doc),
-        "{ \"user\":\"%s\", \"mailId\":\"%s\", \"date\":\"%s\", \"body\":\"%s\" }",
-        user, mailId, iso, escBody);
+        "{ \"user\":\"%s\", \"mail_index\":%d, \"title\":\"%s\", \"date\":\"%s\", \"body\":\"%s\" }",
+        user, mail_index, escTitle, iso, escBody);
 
-    // 파일 저장: <mailId>.json
-    char path[512]; snprintf(path, sizeof(path), "data\\mailbox\\%s.json", mailId);
+    // 파일 저장: <user>_<mail_index>.json 형태
+    char path[512]; snprintf(path, sizeof(path), "data\\mailbox\\%s_%d.json", user, mail_index);
     if (write_text(path, doc) != 0) {
         http_send(c, 500, "Internal Server Error", "application/json", "{\"ok\":false,\"error\":\"write json\"}");
         return;
     }
 
     // index.json 반영
-    if (index_append(mailId, user, iso) != 0) {
+    if (index_append(user, iso, mail_index, title) != 0) {
         http_send(c, 500, "Internal Server Error", "application/json", "{\"ok\":false,\"error\":\"index append\"}");
         return;
     }
+    char resp[256];
+    _snprintf(resp, sizeof(resp), "{ \"ok\": true, \"mail_index\": %d }", mail_index);
     http_send(c, 200, "OK", "application/json", "{\"ok\":true}");
 }
 
