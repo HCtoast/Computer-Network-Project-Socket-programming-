@@ -4,6 +4,8 @@
     "description": "",
     "main": "src/main.js",
     "scripts": {
+        "build": "electron-packager . mail-electron --platform=win32 --arch=x64 --out=dist --overwrite",
+        "start": "electron .",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [],

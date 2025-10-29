@@ -10,7 +10,7 @@ file(GLOB APP_SOURCES CONFIGURE_DEPENDS
 	# "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
 	# "${CMAKE_CURRENT_SOURCE_DIR}/include/*.cpp"
 	# "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Server.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/API_Server.cpp"
 )
 
 add_executable(Server ${APP_SOURCES})
