@@ -1,23 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
 const http = require('http');
-
-const createWindow = () => {
-    const win = new BrowserWindow({
-        minWidth: 1280,
-        minHeight: 720,
-        fullscreen: true,
-    });
-
-    win.loadFile('./vite/index.html');
-};
-
-app.whenReady().then(() => {
-    createWindow();
-});
-
-app.on('window-all-closed', () => {
-    if (process.platform != "darwin") app.quit();
-});
 
 function Request(hostname, port = 80, path = '/', method = "GET", headers = {}, body = null) {
     const options = {
@@ -58,3 +39,13 @@ function Request(hostname, port = 80, path = '/', method = "GET", headers = {}, 
         req.end();
     });
 }
+
+async function test() {
+    let result = await Request('localhost', 3000, '/', 'GET', { 'ACCEPT': 'application/json' });
+    console.log(result);
+
+    let result2 = await Request('localhost', 3000, '/', 'POST', { 'ACCEPT': 'application/json' }, JSON.stringify({ test: 'data' }));
+    console.log(result2);
+}
+
+test();
