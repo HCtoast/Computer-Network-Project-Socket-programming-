@@ -10,6 +10,9 @@
 
 #define RECV_BUF 65536
 
+#define SERVER_ID   "MAILAPI"      // 서버 식별자
+#define EXPECT_HOST ""			   // 기대하는 Host 헤더 값 (빈값이면 검사 안함)
+
 // =================== 유틸 ===================
 
 // 모든 데이터 전송 
@@ -35,13 +38,14 @@ static void http_send(SOCKET c, int code, const char* status,
     const char* content_type, const char* body) {
     char hdr[1024];
     int bl = (int)strlen(body);
-    _snprintf(hdr, sizeof(hdr),
+    snprintf(hdr, sizeof(hdr),
         "HTTP/1.1 %d %s\r\n"
         "Content-Type: %s\r\n"
         "Content-Length: %d\r\n"
+        "X-Server-Id: %s\r\n"
         "Connection: close\r\n"
         "\r\n",
-        code, status, content_type, bl);
+        code, status, content_type, bl, SERVER_ID);
     sendall(c, hdr, (int)strlen(hdr));
     sendall(c, body, bl);
 }
@@ -95,6 +99,21 @@ static int get_header_ci(const char* headers, const char* key, char* out, int ou
     return -1;
 }
 
+// 요청이 "맞는 서버"로 왔는지 검증. (에러 시 -1, 정상 시 0)
+static int verify_server_identity(const char* req) {
+    char expect[128] = { 0 };
+    if (get_header_ci(req, "X-Expect-Server", expect, sizeof(expect)) == 0) {
+        if (strcmp(expect, SERVER_ID) != 0) return -1;
+    }
+    if (EXPECT_HOST[0]) {
+        char host[256] = { 0 };
+        if (get_header_ci(req, "Host", host, sizeof(host)) == 0) {
+            if (_stricmp(host, EXPECT_HOST) != 0) return -1;
+        }
+    }
+    return 0;
+}
+
 // Content-Length 정수값 얻기(없으면 0)
 static int get_content_length(const char* headers) {
     char cl[32] = { 0 };
@@ -132,7 +151,7 @@ static int read_http_request(SOCKET c, char* buf, int bufsz, int* out_total_len)
 
 // json 추출기 (에러 시 -1, 성공 시 0)
 static int json_extract(const char* body, const char* key, char* out, int outsz) {
-    char pat[128]; _snprintf(pat, sizeof(pat), "\"%s\"", key);
+    char pat[128]; snprintf(pat, sizeof(pat), "\"%s\"", key);
     const char* p = strstr(body, pat); if (!p) return -1;
     p = strchr(p, ':'); if (!p) return -1; p++;
     while (*p == ' ' || *p == '\t') p++;
@@ -162,7 +181,7 @@ static int index_append(const char* id, const char* user, const char* iso) {
             char tmp[RECV_BUF];
             char* after = strchr(totp, ','); if (!after) return -1;
             int head = (int)(totp - buf);
-            _snprintf(tmp, sizeof(tmp), "%.*s\"total\":%d%s", head, buf, total + 1, after);
+            snprintf(tmp, sizeof(tmp), "%.*s\"total\":%d%s", head, buf, total + 1, after);
             strcpy(buf, tmp);
         }
     }
@@ -172,12 +191,12 @@ static int index_append(const char* id, const char* user, const char* iso) {
     int comma = (end - 1 >= buf && *(end - 1) != '[');
 
     char add[1024];
-    _snprintf(add, sizeof(add),
+    snprintf(add, sizeof(add),
         "%s{\"id\":\"%s\",\"user\":\"%s\",\"date\":\"%s\"}]}", comma ? "," : "", id, user, iso);
 
     int prefix_len = (int)(end - buf);
     char out[RECV_BUF];
-    _snprintf(out, sizeof(out), "%.*s%s", prefix_len, buf, add);
+    snprintf(out, sizeof(out), "%.*s%s", prefix_len, buf, add);
 
     if (write_text("data\\mailbox\\index.json.tmp", out) != 0) return -1;
     MoveFileExA("data\\mailbox\\index.json.tmp", "data\\mailbox\\index.json",
@@ -234,13 +253,13 @@ static void handle_get_mail(SOCKET c, const char* req) {
         return;
     }
     char path[512], content[RECV_BUF];
-    _snprintf(path, sizeof(path), "data\\mailbox\\%s.msg", id);
+    snprintf(path, sizeof(path), "data\\mailbox\\%s.msg", id);
     if (read_text(path, content, sizeof(content)) < 0) {
         http_send(c, 404, "Not Found", "application/json", "{\"ok\":false,\"error\":\"not found\"}");
         return;
     }
     char resp[RECV_BUF];
-    _snprintf(resp, sizeof(resp), "{\"ok\":true,\"id\":\"%s\",\"raw\":\"%s\"}", id, content);
+    snprintf(resp, sizeof(resp), "{\"ok\":true,\"id\":\"%s\",\"raw\":\"%s\"}", id, content);
     http_send(c, 200, "OK", "application/json", resp);
 }
 
@@ -271,19 +290,19 @@ static void handle_post_send(SOCKET c, const char* req) {
     char iso[64]; {
         time_t t = time(NULL); struct tm tm;
         gmtime_s(&tm, &t);
-        _snprintf(iso, sizeof(iso), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+        snprintf(iso, sizeof(iso), "%04d-%02d-%02dT%02d:%02d:%02dZ",
             tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
             tm.tm_hour, tm.tm_min, tm.tm_sec);
     }
 
     // 원문(.msg) 구성
     char msg[RECV_BUF];
-    _snprintf(msg, sizeof(msg),
+    snprintf(msg, sizeof(msg),
         "User: %s\r\nMail-Id: %s\r\nDate: %s\r\n\r\n%s\r\n",
         user, mailId, iso, text);
 
     // 파일 저장
-    char path[512]; _snprintf(path, sizeof(path), "data\\mailbox\\%s.msg", mailId);
+    char path[512]; snprintf(path, sizeof(path), "data\\mailbox\\%s.msg", mailId);
     if (write_text(path, msg) != 0) {
         http_send(c, 500, "Internal Server Error", "application/json", "{\"ok\":false,\"error\":\"write msg\"}");
         return;
@@ -300,6 +319,12 @@ static void handle_post_send(SOCKET c, const char* req) {
 // =================== 라우팅 ===================
 
 static void route_and_respond(SOCKET c, const char* req) {
+	// 서버 식별 검증
+    if (verify_server_identity(req) != 0) {
+        http_send(c, 421, "Misdirected Request", "application/json",
+            "{\"ok\":false,\"error\":\"wrong server\",\"server\":\"" SERVER_ID "\"}");
+        return;
+    }
     char method[8] = { 0 }, path[256] = { 0 }, ver[16] = { 0 };
     sscanf(req, "%7s %255s %15s", method, path, ver);
 
@@ -371,7 +396,7 @@ int main(void) {
       printf("연결 수락 실패. 에러 코드: %d\n", WSAGetLastError());
       continue; // 서버는 계속 유지
     }
-    printf("클라이언트 연결됨\n");
+    printf("클라이언트 연결됨\nServer : %s", SERVER_ID);
 
     set_timeouts(client_socket, 15000, 15000);
 
