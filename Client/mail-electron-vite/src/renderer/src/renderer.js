@@ -1,4 +1,4 @@
-import './style.css'
+import '../assets/base.css'
 
 const dom = {};
 
@@ -25,3 +25,5 @@ function MailListItem(json) { }
 
 /** @param {object} json */
 function ViewMailContent(json) { }
+
+console.log("renderer.js loaded");
