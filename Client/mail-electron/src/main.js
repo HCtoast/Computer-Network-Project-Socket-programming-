@@ -20,6 +20,15 @@ app.on('window-all-closed', () => {
 });
 
 function Request(hostname, port = 80, path = '/', method = "GET", headers = {}, body = null) {
+    if (!headers['User-Agent']) {
+        headers['User-Agent'] = 'Mail-Client/0.1';
+    }
+
+    if (body !== null) {
+        headers['Content-Type'] = 'application/json';
+        headers['Content-Length'] = Buffer.byteLength(body);
+    }
+
     const options = {
         hostname,
         port,
