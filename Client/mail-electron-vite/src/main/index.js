@@ -1,7 +1,8 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, webContents } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import http from 'http'
 
 function createWindow() {
     // Create the browser window.
@@ -13,7 +14,9 @@ function createWindow() {
         ...(process.platform === 'linux' ? { icon } : {}),
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),
-            sandbox: false
+            sandbox: false,
+            contextIsolation: true,
+            unsafeEval: false,
         }
     })
 
@@ -33,6 +36,8 @@ function createWindow() {
     } else {
         mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
     }
+
+    return mainWindow;
 }
 
 // This method will be called when Electron has finished
@@ -49,10 +54,18 @@ app.whenReady().then(() => {
         optimizer.watchWindowShortcuts(window)
     })
 
-    // IPC test
-    ipcMain.on('ping', () => console.log('pong'))
+    let window = createWindow();
 
-    createWindow()
+    // IPC test
+    ipcMain.on('broadcast', (event, message) => {
+        if (message == null || !message) {
+            console.log('empty message received');
+            console.log(event);
+            return;
+        }
+        message = JSON.parse(message);
+        broadcastListeners[message.type]?.(message.data, window.webContents);
+    });
 
     app.on('activate', function() {
         // On macOS it's common to re-create a window in the app when the
@@ -67,7 +80,45 @@ app.on('window-all-closed', () => {
     }
 })
 
-function Request(hostname, port = 80, path = '/', method = "GET", headers = {}, body = null) {
+const broadcastListeners = {
+    "ipc-server-heartbeat": async ({ hostname, port }, webContents) => {
+        const response = await Request(hostname, port, '/api/heartbeat', 'GET');
+
+        webContents.send('broadcast', JSON.stringify({
+            'type': 'ipc-server-heartbeat-response',
+            'data': {
+                statusCode: response.statusCode,
+                statusMessage: response.statusMessage,
+                body: response.body
+            }
+        }));
+    },
+    "ipc-get-mail-list": async ({ hostname, port }, webContents) => {
+        const response = await Request(hostname, port, '/api/inbox', 'GET');
+
+        webContents.send('broadcast', JSON.stringify({
+            'type': 'ipc-get-mail-list-response',
+            'data': {
+                statusCode: response.statusCode,
+                statusMessage: response.statusMessage,
+                body: response.body
+            }
+        }));
+    },
+    "ipc-send-mail": async ({ hostname, port, mail }, webContents) => {
+        const response = await Request(hostname, port, '/api/send/', 'POST', { 'Accept': 'application:json' }, mail); // mail includes author, receiver, title, content
+
+        ipcMain.emit('broadcast', JSON.stringify({
+            'ipc-send-mail-response': {
+                statusCode: response.statusCode,
+                statusMessage: response.statusMessage,
+                body: response.body
+            }
+        }));
+    }
+};
+
+function Request(hostname, port = 8080, path = '/', method = "GET", headers = {}, body = null) {
     if (!headers['User-Agent']) {
         headers['User-Agent'] = 'Mail-Client/0.1';
     }
@@ -102,7 +153,7 @@ function Request(hostname, port = 80, path = '/', method = "GET", headers = {}, 
                     body: chunks,
                 });
             });
-        });
+        })
 
         req.on('error', (err) => {
             reject(err);
@@ -113,5 +164,5 @@ function Request(hostname, port = 80, path = '/', method = "GET", headers = {}, 
         }
 
         req.end();
-    });
+    }).catch(err => console.error(err));
 }
