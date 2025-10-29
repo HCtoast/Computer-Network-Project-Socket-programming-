@@ -75,6 +75,20 @@ static int read_text(const char* path, char* out, int outsz) {
     return n;
 }
 
+// JSON 문자열 이스케이프
+static void json_escape(const char* src, char* dst, int dstsz) {
+    int i = 0;
+    for (; *src && i < dstsz - 1; src++) {
+        char c = *src;
+        if (c == '\"' || c == '\\') { if (i + 2 >= dstsz) break; dst[i++] = '\\'; dst[i++] = c; }
+        else if (c == '\n') { if (i + 2 >= dstsz) break; dst[i++] = '\\'; dst[i++] = 'n'; }
+        else if (c == '\r') { if (i + 2 >= dstsz) break; dst[i++] = '\\'; dst[i++] = 'r'; }
+        else if (c == '\t') { if (i + 2 >= dstsz) break; dst[i++] = '\\'; dst[i++] = 't'; }
+        else dst[i++] = c;
+    }
+    dst[i] = 0;
+}
+
 // =================== HTTP 요청 읽기/헤더 파싱 ===================
 
 // 헤더와 바디 경계("\r\n\r\n") 위치 반환
@@ -213,18 +227,6 @@ static void handle_get_list(SOCKET c, const char* req) {
         http_send(c, 400, "Bad Request", "application/json", "{\"ok\":false,\"error\":\"missing X-User\"}");
         return;
     }
-    //// 더미 목록
-    //const char* json =
-    //    "{"
-    //    " \"ok\": true,"
-    //    " \"total\": 2,"
-    //    " \"items\": ["
-    //    "   {\"id\":\"demo-001\",\"user\":\"%s\",\"date\":\"2025-10-28T00:00:00Z\"},"
-    //    "   {\"id\":\"demo-002\",\"user\":\"%s\",\"date\":\"2025-10-28T01:00:00Z\"}"
-    //    " ]"
-    //    "}";
-    //char body[1024]; printf(body, sizeof(body), json, user, user);
-    //http_send(c, 200, "OK", "application/json", body);
     char json[RECV_BUF];
     if (read_text("data\\mailbox\\index.json", json, sizeof(json)) < 0) {
         http_send(c, 500, "Internal Server Error", "application/json", "{\"ok\":false,\"error\":\"index read\"}");
@@ -240,20 +242,13 @@ static void handle_get_mail(SOCKET c, const char* req) {
         http_send(c, 400, "Bad Request", "application/json", "{\"ok\":false,\"error\":\"missing X-Mail-Id\"}");
         return;
     }
-    //// 더미 본문
-    //char body[1024];
-    //printf(body, sizeof(body),
-    //    "{ \"ok\": true, \"id\": \"%s\", \"raw\": \"This is a dummy mail body for %s\" }",
-    //    id, id);
-    //http_send(c, 200, "OK", "application/json", body);
-    // 
     // 경로 순회 방지
     if (strstr(id, "..") || strchr(id, '/') || strchr(id, '\\')) {
         http_send(c, 400, "Bad Request", "application/json", "{\"ok\":false,\"error\":\"invalid id\"}");
         return;
     }
     char path[512], content[RECV_BUF];
-    snprintf(path, sizeof(path), "data\\mailbox\\%s.msg", id);
+    snprintf(path, sizeof(path), "data\\mailbox\\%s.json", id); // .msg --> .json
     if (read_text(path, content, sizeof(content)) < 0) {
         http_send(c, 404, "Not Found", "application/json", "{\"ok\":false,\"error\":\"not found\"}");
         return;
@@ -275,12 +270,6 @@ static void handle_post_send(SOCKET c, const char* req) {
         http_send(c, 400, "Bad Request", "application/json", "{\"ok\":false,\"error\":\"invalid json fields\"}");
         return;
     }
-    //// 저장 없이 OK만 리턴
-    //char resp[1024];
-    //printf(resp, sizeof(resp),
-    //    "{ \"ok\": true, \"echo\": {\"user\":\"%s\",\"mailId\":\"%s\",\"len\":%d} }",
-    //    user, mailId, (int)strlen(text));
-    //http_send(c, 200, "OK", "application/json", resp);
     if (strstr(mailId, "..") || strchr(mailId, '/') || strchr(mailId, '\\')) {
         http_send(c, 400, "Bad Request", "application/json", "{\"ok\":false,\"error\":\"invalid mailId\"}");
         return;
@@ -295,16 +284,32 @@ static void handle_post_send(SOCKET c, const char* req) {
             tm.tm_hour, tm.tm_min, tm.tm_sec);
     }
 
-    // 원문(.msg) 구성
-    char msg[RECV_BUF];
-    snprintf(msg, sizeof(msg),
-        "User: %s\r\nMail-Id: %s\r\nDate: %s\r\n\r\n%s\r\n",
-        user, mailId, iso, text);
+    //// 원문(.msg) 구성
+    //char msg[RECV_BUF];
+    //snprintf(msg, sizeof(msg),
+    //    "User: %s\r\nMail-Id: %s\r\nDate: %s\r\n\r\n%s\r\n",
+    //    user, mailId, iso, text);
 
-    // 파일 저장
-    char path[512]; snprintf(path, sizeof(path), "data\\mailbox\\%s.msg", mailId);
-    if (write_text(path, msg) != 0) {
-        http_send(c, 500, "Internal Server Error", "application/json", "{\"ok\":false,\"error\":\"write msg\"}");
+    //// 파일 저장
+    //char path[512]; snprintf(path, sizeof(path), "data\\mailbox\\%s.msg", mailId);
+    //if (write_text(path, msg) != 0) {
+    //    http_send(c, 500, "Internal Server Error", "application/json", "{\"ok\":false,\"error\":\"write msg\"}");
+    //    return;
+    //}
+
+    // 원문 이스케이프 --> JSON 문서 생성
+    char escBody[RECV_BUF];
+    json_escape(text, escBody, sizeof(escBody));
+
+    char doc[RECV_BUF];
+    snprintf(doc, sizeof(doc),
+        "{ \"user\":\"%s\", \"mailId\":\"%s\", \"date\":\"%s\", \"body\":\"%s\" }",
+        user, mailId, iso, escBody);
+
+    // 파일 저장: <mailId>.json
+    char path[512]; snprintf(path, sizeof(path), "data\\mailbox\\%s.json", mailId);
+    if (write_text(path, doc) != 0) {
+        http_send(c, 500, "Internal Server Error", "application/json", "{\"ok\":false,\"error\":\"write json\"}");
         return;
     }
 
@@ -396,7 +401,7 @@ int main(void) {
       printf("연결 수락 실패. 에러 코드: %d\n", WSAGetLastError());
       continue; // 서버는 계속 유지
     }
-    printf("클라이언트 연결됨\nServer : %s", SERVER_ID);
+    printf("클라이언트 연결됨\nServer : %s\n", SERVER_ID); // 클라이언트가 요청할 때 마다 출력 (디버깅용)
 
     set_timeouts(client_socket, 15000, 15000);
 
