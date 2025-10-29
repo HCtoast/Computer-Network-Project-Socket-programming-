@@ -1,0 +1,5 @@
+curl -i http://127.0.0.1:8080/api/list -H "X-User: alice"
+
+curl -i http://127.0.0.1:8080/api/mail -H "X-User: alice" -H "X-Mail-Index: 1"
+curl -i http://127.0.0.1:8080/api/mail -H "X-User: alice" -H "X-Mail-Index: 2"
+curl -i http://127.0.0.1:8080/api/mail -H "X-User: jack" -H "X-Mail-Index: 1"
