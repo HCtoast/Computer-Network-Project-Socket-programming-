@@ -8,6 +8,7 @@ const eventListeners = {
     },
     "ipc-get-mail-list-response": (data) => {
         console.log(data);
+        // 500이면 메일 없음
     }
 };
 
@@ -25,7 +26,8 @@ function SyncMailList() {
         type: 'ipc-get-mail-list',
         data: {
             hostname: '127.0.0.1',
-            port: 8080
+            port: 8080,
+            user: 'test'
         }
     }));
 }

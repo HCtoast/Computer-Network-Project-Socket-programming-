@@ -93,8 +93,8 @@ const broadcastListeners = {
             }
         }));
     },
-    "ipc-get-mail-list": async ({ hostname, port }, webContents) => {
-        const response = await Request(hostname, port, '/api/inbox', 'GET');
+    "ipc-get-mail-list": async ({ hostname, port, user }, webContents) => {
+        const response = await Request(hostname, port, '/api/list', 'GET', { 'X-Expect-Server': 'MAILAPI', 'Host': '', 'X-User': user });
 
         webContents.send('broadcast', JSON.stringify({
             'type': 'ipc-get-mail-list-response',
