@@ -18,6 +18,8 @@ document.addEventListener("DOMContentLoaded", (ev) => {
         eventListeners[message.type]?.(message.data);
     });
 
+    // ["mc-user-name", "mc-server-hostname", "mc-server-port", "mc-refresh-btn", "mc-404-popup", "mc"]
+
     SyncMailList();
 });
 
