@@ -42,20 +42,10 @@ const eventListeners = {
 
         try {
             const apiResponse = JSON.parse(data.body);
-            const currentUser = dom.user.textContent; // 현재 로그인 user
 
             if (apiResponse && Array.isArray(apiResponse.items)) {
-                const receivedMailList = apiResponse.items.filter(mail => {
-                    const recipients = mail.to || '';
-                    
-                    // 받은 메일 모두 포함
-                    const isRecipient = recipients.includes(currentUser);
-
-                    return isRecipient; 
-                });
-
-                mailList = receivedMailList;
-                console.log(`수신된 모든 메일 목록 파싱 성공 (총 ${mailList.length}개):`, mailList);
+                mailList = apiResponse.items;
+                console.log(`모든 메일 목록 파싱 성공 (총 ${mailList.length}개):`, mailList);
                 
                 UpdateMailListUI(mailList);
             } else {
@@ -163,7 +153,6 @@ function HideMailContent() {
 function UpdateMailListUI(list) {
     if (!dom.mailListContainer) return;
 
-    // 기존 목록 초기화 (화면을 비움)
     dom.mailListContainer.innerHTML = ''; 
 
     HideMailContent();
@@ -173,7 +162,17 @@ function UpdateMailListUI(list) {
         return;
     }
 
-    // 2. 새로운 목록 항목 추가
+    const headerItem = document.createElement('li');
+    headerItem.classList.add('mc-mail-list-header');
+
+    headerItem.innerHTML = `
+        <span class="mc-mail-sender">보낸 사람</span>
+        <span class="mc-mail-recipient">받는 사람</span>
+        <span class="mc-mail-title">메일 제목</span>
+    `;
+
+    dom.mailListContainer.appendChild(headerItem);
+
     list.forEach(mail => {
         const mailItem = MailListItem(mail);
         dom.mailListContainer.appendChild(mailItem);
@@ -183,11 +182,14 @@ function UpdateMailListUI(list) {
 }
 
 
-/** @param {int} mail_index */
-function GetMailContent(mail_index) {
+/** 
+ * @param {string} mail_user
+ * @param {number} mail_index
+ */
+function GetMailContent(mail_user, mail_index) {
     const hostname = dom.serverHostName.textContent;
     const port = dom.serverPort.textContent;
-    const user = dom.user.textContent;
+    const currentUser = dom.user.textContent;
 
     window.api.Send(JSON.stringify({
         type: 'ipc-get-mail-content',
@@ -224,15 +226,20 @@ function MailListItem(json) {
     const item = document.createElement('li');
     item.classList.add('mc-mail-list-item');
     
+    item.dataset.mail_user = json.user;
     item.dataset.mail_index = json.mail_index;
 
     item.innerHTML = `
         <span class="mc-mail-sender">${json.user || '발신자 정보 없음'}</span>
+        <span class="mc-mail-recipient">${json.to || '수신자 정보 없음'}</span>
         <span class="mc-mail-title">${json.title || '(제목 없음)'}</span>
     `;
 
     item.addEventListener('click', () => {
-        GetMailContent(Number(item.dataset.mail_index));
+        const mailUser = item.dataset.mail_user;
+        const mailIndex = Number(item.dataset.mail_index);
+
+        GetMailContent(mailUser, mailIndex);
     });
 
     return item;
