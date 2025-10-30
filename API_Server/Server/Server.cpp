@@ -347,14 +347,14 @@ static void handle_get_resp(SOCKET c, const char *req) {
   http_send(c, 200, "OK", "application/json", body);
 }
 
-// GET /api/list  (헤더: X-User)
+// GET /api/list
 static void handle_get_list(SOCKET c, const char *req) {
   char user[256] = {0};
-  if (get_header_ci(req, "X-User", user, sizeof(user)) != 0) {
+  /*if (get_header_ci(req, "X-User", user, sizeof(user)) != 0) {
     http_send(c, 400, "Bad Request", "application/json",
               "{\"ok\":false,\"error\":\"missing X-User\"}");
     return;
-  }
+  }*/
   char json[RECV_BUF];
   if (read_text("data\\mailbox\\index.json", json, sizeof(json)) < 0) {
     http_send(c, 500, "Internal Server Error", "application/json",
