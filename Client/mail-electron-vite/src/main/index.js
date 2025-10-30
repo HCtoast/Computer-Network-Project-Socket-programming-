@@ -82,7 +82,7 @@ app.on('window-all-closed', () => {
 
 const broadcastListeners = {
     "ipc-server-heartbeat": async ({ hostname, port }, webContents) => {
-        const response = await Request(hostname, port, '/api/heartbeat', 'GET');
+        const response = await Request(hostname, port, '/api/resp', 'GET');
 
         webContents.send('broadcast', JSON.stringify({
             'type': 'ipc-server-heartbeat-response',
@@ -105,13 +105,25 @@ const broadcastListeners = {
             }
         }));
     },
-    "ipc-get-mail-content": async ({ hostname, port, mailId }, webContents) => {
-        const response = await Request(hostname, port, `/api/mail/`, 'GET', { 'Accept': 'application:json' });
+    "ipc-get-mail-content": async ({ hostname, port, user, mailIndex }, webContents) => {
+        const response = await Request(hostname, port, `/api/mail/`, 'GET', { 'Accept': 'application:json', 'X-User': user, 'X-Mail-Index': mailIndex });
+
+        console.log('user: ' + user + ' mailIndex: ' + mailIndex);
+        console.log('response: ', response);
+
+        webContents.send('broadcast', JSON.stringify({
+            'type': 'ipc-get-mail-content-response',
+            'data': {
+                statusCode: response.statusCode,
+                statusMessage: response.statusMessage,
+                body: response.body
+            }
+        }));
     },
     "ipc-send-mail": async ({ hostname, port, mail }, webContents) => {
         const response = await Request(hostname, port, '/api/send/', 'POST', { 'Accept': 'application:json' }, mail); // mail includes author, receiver, title, content
 
-        ipcMain.emit('broadcast', JSON.stringify({
+        webContents.send('broadcast', JSON.stringify({
             'ipc-send-mail-response': {
                 statusCode: response.statusCode,
                 statusMessage: response.statusMessage,
@@ -163,7 +175,7 @@ function Request(hostname, port = 8080, path = '/', method = "GET", headers = {}
         })
 
         req.on('error', (err) => {
-            reject(err);
+            resolve(err);
         });
 
         if (body) {
