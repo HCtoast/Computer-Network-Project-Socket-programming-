@@ -215,7 +215,7 @@ static void init_index_if_missing(void) {
 }
 
 // index.json 에 items 뒤에 1건 추가(간단 문자열 조작; 원자적 갱신)
-static int index_append(const char* user, const char* iso, int mail_index, const char* title) {
+static int index_append(const char* user, const char* iso, int mail_index, const char* to, const char* title) {
     char buf[RECV_BUF];
     if (read_text("data\\mailbox\\index.json", buf, sizeof(buf)) < 0) return -1;
 
@@ -240,8 +240,8 @@ static int index_append(const char* user, const char* iso, int mail_index, const
 
     char add[1024];
     snprintf(add, sizeof(add),
-        "%s{\"user\":\"%s\",\"date\":\"%s\",\"mail_index\":%d,\"title\":\"%s\"}]}",
-        comma ? "," : "", user, iso, mail_index, escTitle);
+        "%s{\"user\":\"%s\",\"date\":\"%s\",\"mail_index\":%d, \"to\":\"%s\, \"title\":\"%s\"}]}",
+        comma ? "," : "", user, iso, mail_index, to, escTitle);
 
     int prefix_len = (int)(end - buf);
     char out[RECV_BUF];
@@ -297,13 +297,14 @@ static void handle_get_mail(SOCKET c, const char* req) {
     http_send(c, 200, "OK", "application/json", resp);
 }
 
-// POST /api/send  (JSON: {"user":"...","title":"...","body":"..."})
+// POST /api/send  (JSON: {"user":"...","to":"...","title":"...","body":"..."})
 static void handle_post_send(SOCKET c, const char* req) {
     const char* he = find_header_end(req);
     const char* body = he ? he + 4 : "";
-    char user[256] = { 0 }, title[256] = { 0 }, text[1024] = { 0 };
+    char user[256] = { 0 }, to[256] = { 0 }, title[256] = { 0 }, text[1024] = { 0 };
 
     if (json_extract(body, "user", user, sizeof(user)) != 0 ||
+		json_extract(body, "to", to, sizeof(to)) != 0 ||
         json_extract(body, "title", title, sizeof(title)) != 0 ||
         json_extract(body, "body", text, sizeof(text)) != 0) {
         http_send(c, 400, "Bad Request", "application/json", "{\"ok\":false,\"error\":\"invalid json fields\"}");
@@ -348,8 +349,8 @@ static void handle_post_send(SOCKET c, const char* req) {
 
     char doc[RECV_BUF];
     snprintf(doc, sizeof(doc),
-        "{ \"user\":\"%s\", \"mail_index\":%d, \"title\":\"%s\", \"date\":\"%s\", \"body\":\"%s\" }",
-        user, mail_index, escTitle, iso, escBody);
+        "{ \"user\":\"%s\", \"mail_index\":%d, \"to\":\"%s\, \"title\":\"%s\", \"date\":\"%s\", \"body\":\"%s\" }",
+        user, mail_index, to, escTitle, iso, escBody);
 
     // 파일 저장: <user>_<mail_index>.json 형태
     char path[512]; snprintf(path, sizeof(path), "data\\mailbox\\%s_%d.json", user, mail_index);
@@ -359,7 +360,7 @@ static void handle_post_send(SOCKET c, const char* req) {
     }
 
     // index.json 반영
-    if (index_append(user, iso, mail_index, title) != 0) {
+    if (index_append(user, iso, mail_index, to, title) != 0) {
         http_send(c, 500, "Internal Server Error", "application/json", "{\"ok\":false,\"error\":\"index append\"}");
         return;
     }
