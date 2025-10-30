@@ -35,22 +35,28 @@ const eventListeners = {
     "ipc-get-mail-list-response": (data) => {
         console.log(data);
         
-        // 1. HTTP 상태 코드 확인 및 에러 처리
         if (data.statusCode !== 200) {
             Notify('메일 목록 로드 실패', `서버 응답 오류: ${data.statusCode} ${data.statusMessage}`);
             return;
         }
 
-        // 2. JSON 문자열 파싱
         try {
-            const apiResponse = JSON.parse(data.body); 
+            const apiResponse = JSON.parse(data.body);
+            const currentUser = dom.user.textContent; // 현재 로그인 user
 
-            // 3. 데이터 유효성 검사 및 전역 변수 업데이트
             if (apiResponse && Array.isArray(apiResponse.items)) {
-                mailList = apiResponse.items;
-                console.log('메일 목록 파싱 성공:', mailList);
+                const receivedMailList = apiResponse.items.filter(mail => {
+                    const recipients = mail.to || '';
+                    
+                    // 받은 메일 모두 포함
+                    const isRecipient = recipients.includes(currentUser);
+
+                    return isRecipient; 
+                });
+
+                mailList = receivedMailList;
+                console.log(`수신된 모든 메일 목록 파싱 성공 (총 ${mailList.length}개):`, mailList);
                 
-                // 4. UI 업데이트 함수 호출
                 UpdateMailListUI(mailList);
             } else {
                 Notify('데이터 형식 오류', '서버에서 예상치 못한 형식의 데이터를 받았습니다.');

@@ -315,7 +315,7 @@ static int index_append(const char *user, const char *iso, int mail_index,
 
   char add[1024];
   snprintf(add, sizeof(add),
-           "%s{\"user\":\"%s\",\"date\":\"%s\",\"mail_index\":%d, \"to\":\"%s, "
+           "%s{\"user\":\"%s\",\"date\":\"%s\",\"mail_index\":%d, \"to\":\"%s\", "
            "\"title\":\"%s\"}]}",
            comma ? "," : "", user, iso, mail_index, to, escTitle);
 
