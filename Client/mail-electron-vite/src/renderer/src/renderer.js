@@ -178,8 +178,8 @@ function MailListItem(json) {
     item.dataset.mail_index = json.mail_index;
 
     item.innerHTML = `
-        <span class="mail-sender">${json.user || '발신자 정보 없음'}</span>
-        <span class="mail-title">${json.title || '(제목 없음)'}</span>
+        <span class="mc-mail-sender">${json.user || '발신자 정보 없음'}</span>
+        <span class="mc-mail-title">${json.title || '(제목 없음)'}</span>
     `;
 
     item.addEventListener('click', () => {

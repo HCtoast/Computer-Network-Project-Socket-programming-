@@ -1,5 +1,5 @@
 * {
-    margin: 20;
+    margin: 30;
     padding: 0;
     box-sizing: border-box;
     color: #000000;
@@ -63,19 +63,35 @@ main {
 }
 
 .mc-mail-list-container {
-    display: flex;
-    align-items: center;
     padding: 10px 0;
     margin-bottom: 5px;
-    border-bottom: 2px solid;
+}
+
+.mc-mail-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 .mc-mail-list-item {
-    overflow-y: auto;
-    border-bottom: 2px solid;
+    padding: 8px 0;
+    border-bottom: 2px solid #000000;
+    cursor: pointer;
+    display: flex;
+    white-space: nowrap;
 }
 
-.mc-mail-detail-view {
-    overflow-y: auto;
-    border-bottom: 2px solid;
+.mc-mail-list-item .mc-mail-sender {
+    width: 20%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 10px;
+    flex-shrink: 0;
+    padding-left: 40px;
+}
+
+.mc-mail-list-item .mc-mail-title {
+    width: 80%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
