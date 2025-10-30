@@ -1,1 +1,26 @@
-{"total":3,"items":[{"user":"alice","date":"2025-10-29T15:57:31Z","mail_index":1,"title":"회의 일정 공유"},{"user":"alice","date":"2025-10-29T15:57:43Z","mail_index":2,"title":"회의 일정 공유2"},{"user":"jack","date":"2025-10-29T15:57:52Z","mail_index":1,"title":"회의 일정 공유3"}]}
+{
+    "total": 3,
+    "items": [
+        {
+            "user": "alice",
+            "to": "jack",
+            "date": "2025-10-29T15:57:31Z",
+            "mail_index": 1,
+            "title": "회의 일정 공유"
+        },
+        {
+            "user": "alice",
+            "to": "jack",
+            "date": "2025-10-29T15:57:43Z",
+            "mail_index": 2,
+            "title": "회의 일정 공유2"
+        },
+        {
+            "user": "jack",
+            "to": "alice",
+            "date": "2025-10-29T15:57:52Z",
+            "mail_index": 3,
+            "title": "회의 일정 공유3"
+        }
+    ]
+}

@@ -1,1 +1,7 @@
-{ "user":"jack", "mail_index":1, "title":"본문3", "date":"2025-10-29T15:57:52Z", "body":"본문3" }
+{
+    "user": "jack",
+    "mail_index": 3,
+    "title": "본문3",
+    "date": "2025-10-29T15:57:52Z",
+    "body": "본문3"
+}
