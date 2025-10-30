@@ -1,6 +1,8 @@
 * {
-    margin: 0;
+    margin: 20;
     padding: 0;
+    box-sizing: border-box;
+    color: #000000;
 }
 
 html,
@@ -14,7 +16,66 @@ body {
     width: 100%;
     height: 100%;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
+    background: #fff;
+}
+
+
+
+/* ---------- 헤더 스타일 ---------- */
+header {
+    width: 100%;
+    padding: 20px 20px 0 20px;
+    flex-shrink: 0;
+    position: sticky;
+}
+
+.info-bar {
+    display: flex;
     align-items: center;
-    background: #343434;
+    padding-bottom: 10px;
+}
+
+.info-bar div {
+    padding: 5px 10px;
+    border-bottom: 2px solid;
+    margin-right: 40px;
+    white-space: nowrap;
+}
+
+.mc-refresh-btn {
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s; 
+}
+
+.mc-refresh-btn:hover {
+    transform: translateY(-2px);
+}
+
+
+
+/* ---------- 메인 스타일 ---------- */
+main {
+    width: 100%;
+    flex-grow: 1;
+    padding: 20px 20px 0 20px;
+    overflow-y: auto;
+}
+
+.mc-mail-list-container {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    margin-bottom: 5px;
+    border-bottom: 2px solid;
+}
+
+.mc-mail-list-item {
+    overflow-y: auto;
+    border-bottom: 2px solid;
+}
+
+.mc-mail-detail-view {
+    overflow-y: auto;
+    border-bottom: 2px solid;
 }
