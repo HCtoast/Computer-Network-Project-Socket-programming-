@@ -255,6 +255,21 @@ static int index_append(const char* user, const char* iso, int mail_index, const
 
 // =================== 라우트 핸들러 ===================
 
+// GET /api/resp  → 서버 이름과 연결 상태 반환
+static void handle_get_resp(SOCKET c, const char* req) {
+
+    // 응답 JSON
+    char body[1024];
+    _snprintf(body, sizeof(body),
+        "{"
+        "\"ok\":true,"
+        "\"server\":\"%s\""
+        "}",
+        SERVER_ID);
+
+    http_send(c, 200, "OK", "application/json", body);
+}
+
 // GET /api/list  (헤더: X-User)
 static void handle_get_list(SOCKET c, const char* req) {
     char user[256] = { 0 };
@@ -381,6 +396,7 @@ static void route_and_respond(SOCKET c, const char* req) {
     char method[8] = { 0 }, path[256] = { 0 }, ver[16] = { 0 };
     sscanf(req, "%7s %255s %15s", method, path, ver);
 
+    if (strcmp(method, "GET") == 0 && strcmp(path, "/api/resp") == 0) { handle_get_resp(c, req); return; }
     if (strcmp(method, "GET") == 0 && strcmp(path, "/api/list") == 0) { handle_get_list(c, req); return; }
     if (strcmp(method, "GET") == 0 && strcmp(path, "/api/mail") == 0) { handle_get_mail(c, req); return; }
     if (strcmp(method, "POST") == 0 && strcmp(path, "/api/send") == 0) { handle_post_send(c, req); return; }
