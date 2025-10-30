@@ -105,6 +105,9 @@ const broadcastListeners = {
             }
         }));
     },
+    "ipc-get-mail-content": async ({ hostname, port, mailId }, webContents) => {
+        const response = await Request(hostname, port, `/api/mail/`, 'GET', { 'Accept': 'application:json' });
+    },
     "ipc-send-mail": async ({ hostname, port, mail }, webContents) => {
         const response = await Request(hostname, port, '/api/send/', 'POST', { 'Accept': 'application:json' }, mail); // mail includes author, receiver, title, content
 
@@ -122,6 +125,10 @@ function Request(hostname, port = 8080, path = '/', method = "GET", headers = {}
     if (!headers['User-Agent']) {
         headers['User-Agent'] = 'Mail-Client/0.1';
     }
+
+    // dependent for every request to mail server API /api/*
+    headers['X-Expect-Server'] = 'MAILAPI';
+    headers['Host'] = '';
 
     if (body !== null) {
         headers['Content-Type'] = 'application/json';
