@@ -95,3 +95,55 @@ main {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+
+
+/* ---------- 팝업 ---------- */
+.popup-container {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.mc-mail-detail-view.popup-content {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 800px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.popup-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.mc-mail-detail-header {
+    margin-bottom: 20px;
+}
+
+.mc-mail-detail-content {
+    white-space: pre-wrap;
+    line-height: 1.6;
+    max-height: 60vh;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 15px;
+    background-color: #f9f9f9;
+}

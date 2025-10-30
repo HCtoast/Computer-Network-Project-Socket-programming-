@@ -12,7 +12,17 @@
 
 <body>
     <div class="app">
-        <div class="popup-container"></div>
+
+        <div class="popup-container">
+            <div class="mc-mail-detail-view popup-content">
+                <button class="popup-close-btn">X</button>
+                <div class="mc-mail-detail-header">
+                    <div class="mc-mail-detail-sender">보낸 이</div>
+                    <div class="mc-mail-detail-title">메일 제목</div>
+                </div>
+                <div class="mc-mail-detail-content">메일 본문 내용</div>
+            </div>
+        </div>
 
         <header>
             <div class="info-bar">
@@ -27,18 +37,12 @@
             <div class="mc-mail-list-container">
                 <ul class="mc-mail-list"></ul>
             </div>
-            <!---
-            <div class="mc-mail-detail-view">
-                <div class="mail-detail-sender">보낸 이</div>
-                <div class="mail-detail-title">메일 제목</div>
-                <hr>
-            <div class="mail-detail-content">메일 본문 내용</div>
-            -->
         </main>
 
         <footer>
 
         </footer>
+
     </div>
     <script type="module" src="./src/renderer.js"></script>
 </body>
