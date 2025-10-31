@@ -186,7 +186,7 @@ static int verify_server_identity(const char *req) {
   if (EXPECT_HOST[0]) {
     char host[256] = {0};
     if (get_header_ci(req, "Host", host, sizeof(host)) == 0) {
-      if (_stricmp(host, EXPECT_HOST) != 0)
+      if (stricmp(host, EXPECT_HOST) != 0)
         return -1;
     }
   }
@@ -366,11 +366,6 @@ static void handle_get_resp(SOCKET c, const char *req) {
 // GET /api/list
 static void handle_get_list(SOCKET c, const char *req) {
   char user[256] = {0};
-  /*if (get_header_ci(req, "X-User", user, sizeof(user)) != 0) {
-    http_send(c, 400, "Bad Request", "application/json",
-              "{\"ok\":false,\"error\":\"missing X-User\"}");
-    return;
-  }*/
   char json[RECV_BUF];
   if (read_text("data\\mailbox\\index.json", json, sizeof(json)) < 0) {
     http_send(c, 500, "Internal Server Error", "application/json",
@@ -440,19 +435,6 @@ static void handle_post_send(SOCKET c, const char *req) {
              tm.tm_min, tm.tm_sec);
   }
 
-  //// 원문(.msg) 구성
-  // char msg[RECV_BUF];
-  // snprintf(msg, sizeof(msg),
-  //     "User: %s\r\nMail-Id: %s\r\nDate: %s\r\n\r\n%s\r\n",
-  //     user, title, iso, text);
-
-  //// 파일 저장
-  // char path[512]; snprintf(path, sizeof(path), "data\\mailbox\\%s.msg",
-  // title); if (write_text(path, msg) != 0) {
-  //     http_send(c, 500, "Internal Server Error", "application/json",
-  //     "{\"ok\":false,\"error\":\"write msg\"}"); return;
-  // }
-
   // 원문 이스케이프 --> JSON 문서 생성
   char escBody[RECV_BUF];
   json_escape(text, escBody, sizeof(escBody));
@@ -501,18 +483,22 @@ static void route_and_respond(SOCKET c, const char *req) {
   sscanf(req, "%7s %255s %15s", method, path, ver);
 
   if (strcmp(method, "GET") == 0 && strcmp(path, "/api/resp") == 0) {
+	  printf("Received GET /api/resp\n");
     handle_get_resp(c, req);
     return;
   }
   if (strcmp(method, "GET") == 0 && strcmp(path, "/api/list") == 0) {
+	  printf("Received GET /api/list\n");
     handle_get_list(c, req);
     return;
   }
   if (strcmp(method, "GET") == 0 && strncmp(path, "/api/mail", 9) == 0) {
+	  printf("Received GET /api/mail\n");
     handle_get_mail(c, req, path);
     return;
   }
   if (strcmp(method, "POST") == 0 && strcmp(path, "/api/send") == 0) {
+	  printf("Received POST /api/send\n");
     handle_post_send(c, req);
     return;
   }
@@ -582,8 +568,8 @@ int main(void) {
       printf("연결 수락 실패. 에러 코드: %d\n", WSAGetLastError());
       continue; // 서버는 계속 유지
     }
-    printf("클라이언트 연결됨\nServer : %s\n",
-           SERVER_ID); // 클라이언트가 요청할 때 마다 출력 (디버깅용)
+    //printf("클라이언트 연결됨\nServer : %s\n",
+    //       SERVER_ID); // 클라이언트가 요청할 때 마다 출력 (디버깅용)
 
     set_timeouts(client_socket, 15000, 15000);
 
