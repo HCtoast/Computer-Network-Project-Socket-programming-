@@ -67,41 +67,33 @@ const eventListeners = {
         try {
             // 1차 파싱
             const apiResponse = JSON.parse(data.body);
+            console.log(data.body);
+            console.log(apiResponse);
 
             if (apiResponse.raw) {
                 let rawContent = apiResponse.raw;
                 let mailContent = {};
 
-                try {
-                    // 2차 파싱
-                    mailContent = JSON.parse(rawContent);
-                } catch (innerError) {
-                    console.error('2차 JSON 파싱 실패', innerError);
+                // 오류 복구
+                if (typeof rawContent === 'string' && rawContent.length > 0) {
+                    let fixedContent = rawContent.replace(/\\"/g, '$$TMP$$');
+                    fixedContent = fixedContent.replace(/"/g, '\\"');
+                    fixedContent = fixedContent.replace(/\$\$TMP\$\$/g, '\\"');
 
-                    // 오류 복구
-                    if (typeof rawContent === 'string' && rawContent.length > 0) {
-                        let fixedContent = rawContent.replace(/\\"/g, '$$TMP$$');
-                        fixedContent = fixedContent.replace(/"/g, '\\"');
-                        fixedContent = fixedContent.replace(/\$\$TMP\$\$/g, '\\"');
-
-                        try {
-                            mailContent = JSON.parse(fixedContent);
-                            console.log('따옴표 이스케이프 후 파싱 성공');
-                        } catch (finalError) {
-                            console.error('따옴표 이스케이프 후에도 파싱 실패', finalError);
-                        }
+                    try {
+                        mailContent = JSON.parse(fixedContent);
+                        console.log('따옴표 이스케이프 후 파싱 성공');
+                    } catch (finalError) {
+                        console.error('따옴표 이스케이프 후에도 파싱 실패', finalError);
                     }
-
-                    mailContent.title = '(JSON 파싱 오류 발생)';
-                    mailContent.user = '(발신자 정보 알 수 없음)';
-                    mailContent.body = `[원본 오류 내용]:\n서버에서 받은 메일 본문이 올바른 JSON 형식이 아닙니다.\n\n${rawContent}`;
                 }
 
-                ViewMailContent(mailContent);
-
-            } else {
-                Notify('상세 내용 오류', '메일 본문 정보가 누락되었습니다.');
+                mailContent.title = '(JSON 파싱 오류 발생)';
+                mailContent.user = '(발신자 정보 알 수 없음)';
+                mailContent.body = `[원본 오류 내용]:\n서버에서 받은 메일 본문이 올바른 JSON 형식이 아닙니다.\n\n${rawContent}`;
             }
+
+            ViewMailContent(mailContent);
 
         } catch (error) {
             console.error('최종 JSON 파싱 오류:', error);
