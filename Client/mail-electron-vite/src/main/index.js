@@ -108,7 +108,7 @@ const broadcastListeners = {
     "ipc-get-mail-content": async ({ hostname, port, mailIndex }, webContents) => {
         const response = await Request(hostname, port, `/api/mail/?index=${mailIndex}`, 'GET', { 'Accept': 'application:json' });
 
-        console.log('user: ' + user + ' mailIndex: ' + mailIndex);
+        console.log(' mailIndex: ' + mailIndex);
         console.log('response: ', response);
 
         webContents.send('broadcast', JSON.stringify({

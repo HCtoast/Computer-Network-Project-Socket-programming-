@@ -58,6 +58,7 @@ const eventListeners = {
         }
     },
     "ipc-get-mail-content-response": (data) => {
+        console.log(data);
         if (data.statusCode !== 200) {
             Notify('메일 상세 로드 실패', `서버 응답 오류: ${data.statusCode} ${data.statusMessage}`);
             return;
