@@ -34,7 +34,7 @@ const eventListeners = {
     },
     "ipc-get-mail-list-response": (data) => {
         console.log(data);
-        
+
         if (data.statusCode !== 200) {
             Notify('메일 목록 로드 실패', `서버 응답 오류: ${data.statusCode} ${data.statusMessage}`);
             return;
@@ -46,7 +46,7 @@ const eventListeners = {
             if (apiResponse && Array.isArray(apiResponse.items)) {
                 mailList = apiResponse.items;
                 console.log(`모든 메일 목록 파싱 성공 (총 ${mailList.length}개):`, mailList);
-                
+
                 UpdateMailListUI(mailList);
             } else {
                 Notify('데이터 형식 오류', '서버에서 예상치 못한 형식의 데이터를 받았습니다.');
@@ -66,7 +66,7 @@ const eventListeners = {
         try {
             // 1차 파싱
             const apiResponse = JSON.parse(data.body);
-            
+
             if (apiResponse.raw) {
                 let rawContent = apiResponse.raw;
                 let mailContent = {};
@@ -82,7 +82,7 @@ const eventListeners = {
                         let fixedContent = rawContent.replace(/\\"/g, '$$TMP$$');
                         fixedContent = fixedContent.replace(/"/g, '\\"');
                         fixedContent = fixedContent.replace(/\$\$TMP\$\$/g, '\\"');
-                        
+
                         try {
                             mailContent = JSON.parse(fixedContent);
                             console.log('따옴표 이스케이프 후 파싱 성공');
@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", (ev) => {
         eventListeners[message.type]?.(message.data);
     });
 
-    dom.user.textContent = 'alice'; 
+    dom.user.textContent = 'alice';
     dom.serverHostName.textContent = '127.0.0.1';
     dom.serverPort.textContent = '8080';
 
@@ -153,7 +153,7 @@ function HideMailContent() {
 function UpdateMailListUI(list) {
     if (!dom.mailListContainer) return;
 
-    dom.mailListContainer.innerHTML = ''; 
+    dom.mailListContainer.innerHTML = '';
 
     HideMailContent();
 
@@ -177,12 +177,12 @@ function UpdateMailListUI(list) {
         const mailItem = MailListItem(mail);
         dom.mailListContainer.appendChild(mailItem);
     });
-    
+
     console.log(`총 ${list.length}개의 메일 목록이 화면에 업데이트되었습니다.`);
 }
 
 
-/** 
+/**
  * @param {string} mail_user
  * @param {number} mail_index
  */
@@ -196,7 +196,6 @@ function GetMailContent(mail_user, mail_index) {
         data: {
             hostname: hostname,
             port: port,
-            user: user,
             mailIndex: mail_index.toString()
         }
     }));
@@ -225,7 +224,7 @@ function Notify(title, content) {
 function MailListItem(json) {
     const item = document.createElement('li');
     item.classList.add('mc-mail-list-item');
-    
+
     item.dataset.mail_user = json.user;
     item.dataset.mail_index = json.mail_index;
 
@@ -262,6 +261,6 @@ function ViewMailContent(json) {
     if (dom.popupContainer) {
         dom.popupContainer.style.display = 'flex';
     }
-    
+
     console.log(`메일 상세 내용 표시 완료: ${json.title} (팝업)`);
 }
