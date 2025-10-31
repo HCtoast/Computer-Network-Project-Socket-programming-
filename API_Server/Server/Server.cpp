@@ -461,7 +461,7 @@ static void handle_post_send(SOCKET c, const char *req) {
 
   char doc[RECV_BUF];
   snprintf(doc, sizeof(doc),
-           "{ \"user\":\"%s\", \"mail_index\":%d, \"to\":\"%s, "
+           "{ \"user\":\"%s\", \"mail_index\":%d, \"to\":\"%s\", "
            "\"title\":\"%s\", \"date\":\"%s\", \"body\":\"%s\" }",
            user, mail_index, to, escTitle, iso, escBody);
 
