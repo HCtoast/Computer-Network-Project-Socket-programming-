@@ -105,8 +105,8 @@ const broadcastListeners = {
             }
         }));
     },
-    "ipc-get-mail-content": async ({ hostname, port, user, mailIndex }, webContents) => {
-        const response = await Request(hostname, port, `/api/mail/`, 'GET', { 'Accept': 'application:json', 'X-User': user, 'X-Mail-Index': mailIndex });
+    "ipc-get-mail-content": async ({ hostname, port, mailIndex }, webContents) => {
+        const response = await Request(hostname, port, `/api/mail/?index=${mailIndex}`, 'GET', { 'Accept': 'application:json' });
 
         console.log('user: ' + user + ' mailIndex: ' + mailIndex);
         console.log('response: ', response);

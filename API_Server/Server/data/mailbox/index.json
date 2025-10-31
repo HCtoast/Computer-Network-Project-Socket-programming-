@@ -1,5 +1,5 @@
 {
-    "total": 3,
+    "total":4,
     "items": [
         {
             "user": "alice",
@@ -22,5 +22,4 @@
             "mail_index": 3,
             "title": "회의 일정 공유3"
         }
-    ]
-}
+    ,{"user":"alice","date":"2025-10-31T06:22:01Z","mail_index":4, "to":"jack", "title":"회의 일정 공유4"}]}
