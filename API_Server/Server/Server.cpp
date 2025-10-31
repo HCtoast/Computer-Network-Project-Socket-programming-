@@ -394,7 +394,7 @@ static void handle_get_mail(SOCKET c, const char *req, const char* path) {
     return;
   }
   char resp[RECV_BUF];
-  snprintf(resp, sizeof(resp), "{\"ok\":true,\"raw\":\"%s\"}",
+  snprintf(resp, sizeof(resp), "{\"ok\":true,\"raw\":%s}",
            content);
   http_send(c, 200, "OK", "application/json", resp);
 }
@@ -483,22 +483,22 @@ static void route_and_respond(SOCKET c, const char *req) {
   sscanf(req, "%7s %255s %15s", method, path, ver);
 
   if (strcmp(method, "GET") == 0 && strcmp(path, "/api/resp") == 0) {
-	  printf("Received GET /api/resp\n");
+	printf("Received GET /api/resp\n");
     handle_get_resp(c, req);
     return;
   }
   if (strcmp(method, "GET") == 0 && strcmp(path, "/api/list") == 0) {
-	  printf("Received GET /api/list\n");
+	printf("Received GET /api/list\n");
     handle_get_list(c, req);
     return;
   }
   if (strcmp(method, "GET") == 0 && strncmp(path, "/api/mail", 9) == 0) {
-	  printf("Received GET /api/mail\n");
+	printf("Received GET /api/mail\n");
     handle_get_mail(c, req, path);
     return;
   }
   if (strcmp(method, "POST") == 0 && strcmp(path, "/api/send") == 0) {
-	  printf("Received POST /api/send\n");
+	printf("Received POST /api/send\n");
     handle_post_send(c, req);
     return;
   }
