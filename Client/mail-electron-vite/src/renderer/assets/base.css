@@ -1,5 +1,5 @@
 * {
-    margin: 30;
+    margin: 0;
     padding: 0;
     box-sizing: border-box;
     color: #000000;
@@ -25,9 +25,11 @@ body {
 /* ---------- 헤더 스타일 ---------- */
 header {
     width: 100%;
-    padding: 20px 20px 0 20px;
+    padding: 0px 20px;
     flex-shrink: 0;
     position: sticky;
+    margin-top: 25px;
+    margin-left: 15px;
 }
 
 .info-bar {
@@ -37,19 +39,44 @@ header {
 }
 
 .info-bar div {
-    padding: 5px 10px;
-    border-bottom: 2px solid;
-    margin-right: 40px;
+    padding: 5px 0px;
+    border-bottom: none;
+    margin-right: 30px;
     white-space: nowrap;
+    font-weight: 500;
+    font-size: 0.95rem;
+    flex-shrink: 0;
 }
 
 .mc-refresh-btn {
+    border: none;
+    border-radius: 4px;
+    box-shadow: none;
+    margin-right: 15px;
+
+    background-color: transparent; 
+    color: #333; 
+    padding: 15px 30px;
+
     cursor: pointer;
-    transition: background-color 0.2s, color 0.2s; 
+    transition: background-color 0.2s, color 0.2s;
+
+    margin-left: auto;
+    margin-right: 0;
+    font-weight: 500;
+    font-size: 0.9rem;
+
+    flex-shrink: 0;
 }
 
 .mc-refresh-btn:hover {
-    transform: translateY(-2px);
+    background-color: #f0f0f0;
+    color: #000;
+}
+
+.mc-refresh-btn:active {
+    background-color: #e0e0e0;
+    color: #000;
 }
 
 
@@ -58,8 +85,9 @@ header {
 main {
     width: 100%;
     flex-grow: 1;
-    padding: 20px 20px 0 20px;
+    padding: 0px 20px 0 20px;
     overflow-y: auto;
+    margin-top: 10px;
 }
 
 .mc-mail-list-header {
@@ -70,10 +98,9 @@ main {
     
     padding: 10px 0;
     font-weight: bold;
-    border-bottom: 3px solid #000000;
-    background-color: #9f9f9f;
+    border-bottom: 3px solid #333;
+    background-color: #e6e6e6;
     cursor: default;
-
     padding-left: 25px;
 }
 
@@ -82,7 +109,7 @@ main {
 }
 
 .mc-mail-list-container {
-    padding: 10px 0;
+    padding: 0px 0;
     margin-bottom: 5px;
 }
 
@@ -94,7 +121,7 @@ main {
 
 .mc-mail-list-item {
     padding: 10px 0;
-    border-bottom: 2px solid #000000;
+    border-bottom: 1px solid #e0e0e0;
     cursor: pointer;
     display: grid; 
     grid-template-columns: 20% 20% 60%; /* 보낸 사람(20), 받는 사람(20), 제목(60) */
@@ -110,7 +137,7 @@ main {
 }
 
 .mc-mail-list-item:hover {
-    background-color: #f0f0f0;
+    background-color: #f5f5f5;
 }
 
 
