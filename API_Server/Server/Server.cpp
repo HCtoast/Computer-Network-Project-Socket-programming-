@@ -179,14 +179,19 @@ static int get_header_ci(const char *headers, const char *key, char *out,
 // 요청이 "맞는 서버"로 왔는지 검증. (에러 시 -1, 정상 시 0)
 static int verify_server_identity(const char *req) {
   char expect[128] = {0};
-  if (get_header_ci(req, "X-Expect-Server", expect, sizeof(expect)) == 0) {
-    if (strcmp(expect, SERVER_ID) != 0)
+  get_header_ci(req, "X-Expect-Server", expect, sizeof(expect));
+  if (strcmp(expect, SERVER_ID) != 0)
       return -1;
-  }
+  //if (get_header_ci(req, "X-Expect-Server", expect, sizeof(expect)) == 0) {
+  //  if (!expect)
+  //    return -1;
+  //  if (strcmp(expect, SERVER_ID) != 0)
+  //    return -1;
+  //}
   if (EXPECT_HOST[0]) {
     char host[256] = {0};
     if (get_header_ci(req, "Host", host, sizeof(host)) == 0) {
-      if (stricmp(host, EXPECT_HOST) != 0)
+      if (strcmp(host, EXPECT_HOST) != 0)
         return -1;
     }
   }
