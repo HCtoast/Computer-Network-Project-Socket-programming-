@@ -126,9 +126,12 @@ document.addEventListener("DOMContentLoaded", (ev) => {
         eventListeners[message.type]?.(message.data);
     });
 
-    dom.user.textContent = 'alice';
-    dom.serverHostName.textContent = '127.0.0.1';
-    dom.serverPort.textContent = '8080';
+    if (dom.user && dom.user.textContent.trim() === '유저 이름')
+        dom.user.textContent = 'alice';
+    if (dom.serverHostName && dom.serverHostName.textContent.trim() === '접속 주소')
+        dom.serverHostName.textContent = '127.0.0.1';
+    if (dom.serverPort && dom.serverPort.textContent.trim() === '포트')
+        dom.serverPort.textContent = '8080';
 
     dom.refreshBtn.addEventListener('click', SyncMailList);
     dom.closePopupBtn.addEventListener('click', HideMailContent);
@@ -200,7 +203,7 @@ function UpdateMailListUI(list) {
 function GetMailContent(mail_user, mail_index) {
     const hostname = dom.serverHostName.textContent;
     const port = dom.serverPort.textContent;
-    const currentUser = dom.user.textContent;
+    const user = dom.user.textContent;
 
     window.api.Send(JSON.stringify({
         type: 'ipc-get-mail-content',
