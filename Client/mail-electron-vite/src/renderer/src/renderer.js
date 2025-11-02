@@ -13,6 +13,7 @@ const dom = {
     popupContainer: document.querySelector('.popup-container'),
     closePopupBtn: document.querySelector('.popup-close-btn'),
 
+    // HTML
     mailDetailView: document.querySelector('.mc-mail-detail-view'),
     mailTitle: document.querySelector('.mc-mail-detail-title'),
     mailSender: document.querySelector('.mc-mail-detail-sender'),
@@ -60,40 +61,57 @@ const eventListeners = {
     "ipc-get-mail-content-response": (data) => {
         console.log(data);
         if (data.statusCode !== 200) {
-            Notify('메일 상세 로드 실패', `서버 응답 오류: ${data.statusCode} ${data.statusMessage}`);
+            let errorMessage = `서버 응답 오류: ${data.statusCode} ${data.statusMessage || ''}`;
+            try {
+                const errorJson = JSON.parse(data.body);
+                if (errorJson.error) {
+                    errorMessage += ` (${errorJson.error})`;
+                }
+            } catch (e) {
+                // body가 JSON이 아니면 무시
+            }
+            
+            Notify('메일 상세 로드 실패', errorMessage);
             return;
         }
 
         try {
-            // 1차 파싱
+            // 데이터 파싱
             const apiResponse = JSON.parse(data.body);
-            console.log(data.body);
-            console.log(apiResponse);
+            let mailContent = null;
+
+            if (!apiResponse.ok) {
+                Notify('메일 내용 요청 실패', apiResponse.error || '알 수 없는 오류');
+                return;
+            }
 
             if (apiResponse.raw) {
                 let rawContent = apiResponse.raw;
-                let mailContent = {};
-
-                // 오류 복구
                 if (typeof rawContent === 'string' && rawContent.length > 0) {
-                    let fixedContent = rawContent.replace(/\\"/g, '$$TMP$$');
-                    fixedContent = fixedContent.replace(/"/g, '\\"');
-                    fixedContent = fixedContent.replace(/\$\$TMP\$\$/g, '\\"');
-
                     try {
-                        mailContent = JSON.parse(fixedContent);
-                        console.log('따옴표 이스케이프 후 파싱 성공');
+                        mailContent = JSON.parse(rawContent);
+                        console.log('raw 필드 파싱 성공');
                     } catch (finalError) {
-                        console.error('따옴표 이스케이프 후에도 파싱 실패', finalError);
+                        // 파싱 실패 시에만 오류 메시지 할당
+                        console.error('raw 필드 파싱 실패', finalError);
+                        mailContent = {
+                            title: '(JSON 파싱 오류 발생)',
+                            user: '(발신자 정보 알 수 없음)',
+                            body: `[원본 오류 내용]:\n서버에서 받은 메일 본문이 올바른 JSON 형식이 아닙니다.\n\n${rawContent}`
+                        };
                     }
+                } else if (typeof rawContent === 'object') {
+                    // C 서버가 "raw": {...} 형태로 따옴표 없이 보낸 경우
+                    mailContent = rawContent;
                 }
-
-                mailContent.title = '(JSON 파싱 오류 발생)';
-                mailContent.user = '(발신자 정보 알 수 없음)';
-                mailContent.body = `[원본 오류 내용]:\n서버에서 받은 메일 본문이 올바른 JSON 형식이 아닙니다.\n\n${rawContent}`;
             }
 
-            ViewMailContent(mailContent);
+            // mailContent가 유효한 객체일 경우에만 ViewMailContent 호출
+            if (mailContent) {
+                ViewMailContent(mailContent);
+            } else {
+                Notify('JSON 파싱 오류', '서버 응답에 유효한 메일 데이터가 없습니다.');
+            }
 
         } catch (error) {
             console.error('최종 JSON 파싱 오류:', error);
@@ -242,8 +260,8 @@ function MailListItem(json) {
 /** @param {object} json */
 function ViewMailContent(json) {
     dom.mailTitle.textContent = json.title || '(제목 없음)';
-    dom.mailSender.textContent = `보낸 이: ${json.user || '알 수 없음'}`;
-    dom.mailRecipient.textContent = `받는 이: ${json.to || '알 수 없음'}`;
+    dom.mailSender.textContent = `보낸 사람: ${json.user || '알 수 없음'}`;
+    dom.mailRecipient.textContent = `받는 사람: ${json.to || '알 수 없음'}`;
 
     const dateStr = json.date ? json.date.replace('T', ' ').replace('Z', '').substring(0, 16) : '(날짜 정보 없음)';
     dom.mailDate.textContent = `날짜: ${dateStr}`;
