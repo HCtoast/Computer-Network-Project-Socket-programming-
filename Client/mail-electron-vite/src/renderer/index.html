@@ -14,7 +14,7 @@
     <div class="app">
 
         <div class="popup-container">
-            <div class="mc-mail-detail-view popup-content">
+            <div class="mc-mail-detail-view popup-content" style="display: none">
                 <button class="popup-close-btn">X</button>
                 <div class="mc-mail-detail-header">
                     <div class="mc-mail-detail-sender">보낸 이</div>
@@ -24,6 +24,18 @@
                 </div>
                 <div class="mc-mail-detail-content">메일 본문 내용</div>
             </div>
+            <div class="mc-mail-writer-view popup-content" style="display: none">
+                <button class="popup-close-btn2">X</button>
+                <div class="mc-mail-writer-header">
+                    <input type="text" id="mail-recipient" class="mc-mail-writer-recipient-input" placeholder="받는 이">
+                    <input type="text" id="mail-title" class="mc-mail-writer-title-input" placeholder="메일 제목">
+                </div>
+                <div class="mc-mail-writer-content-container">
+                    <textarea id="mail-body" class="mc-mail-writer-content-input" resize="none" rows="15"
+                        placeholder="메일 본문 내용을 입력하세요."></textarea>
+                </div>
+                <button class="mc-mail-send-btn">메일 보내기</button>
+            </div>
         </div>
 
         <header>
@@ -31,6 +43,7 @@
                 <div class="mc-user-name" contenteditable="true">유저 이름</div>
                 <div class="mc-server-hostname" contenteditable="true">접속 주소</div>
                 <div class="mc-server-port" contenteditable="true">포트</div>
+                <div class="mc-view-mail-writer-btn">메일 작성</div>
                 <div class="mc-refresh-btn">새로 고침</div>
             </div>
         </header>
@@ -42,7 +55,9 @@
         </main>
 
         <footer>
+            <div class="mc-mail-notification-container">
 
+            </div>
         </footer>
 
     </div>

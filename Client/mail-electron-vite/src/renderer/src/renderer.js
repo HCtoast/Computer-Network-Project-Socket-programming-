@@ -5,6 +5,7 @@ const dom = {
     serverHostName: document.querySelector('.mc-server-hostname'),
     serverPort: document.querySelector('.mc-server-port'),
     refreshBtn: document.querySelector('.mc-refresh-btn'),
+    mailWriteBtn: document.querySelector('.mc-view-mail-writer-btn'),
     popup404: document.querySelector('.mc-404-popup'),
 
     mailListContainer: document.querySelector('.mc-mail-list'),
@@ -12,6 +13,8 @@ const dom = {
     // popup
     popupContainer: document.querySelector('.popup-container'),
     closePopupBtn: document.querySelector('.popup-close-btn'),
+    closePopupBtn2: document.querySelector('.popup-close-btn2'),
+    sendBtn: document.querySelector('.mc-mail-send-btn'),
 
     // HTML
     mailDetailView: document.querySelector('.mc-mail-detail-view'),
@@ -20,6 +23,7 @@ const dom = {
     mailRecipient: document.querySelector('.mc-mail-detail-recipient'),
     mailDate: document.querySelector('.mc-mail-detail-date'),
     mailContent: document.querySelector('.mc-mail-detail-content'),
+    mailWriterView: document.querySelector('.mc-mail-writer-view'),
 };
 
 let mailList = [];
@@ -28,13 +32,22 @@ let mailList = [];
 const eventListeners = {
     "ipc-server-heartbeat-response": (data) => {
         if (data.statusCode === 200) {
-            console.log("API 서버 연결 성공");
+            // console.log("API 서버 연결 성공");
         } else {
             console.error("API 서버 연결 실패");
         }
     },
-    "ipc-get-mail-list-response": (data) => {
+    "ipc-send-mail-response": (data) => {
         console.log(data);
+        if (data.statusCode === 200) {
+            console.log("메일 전송 성공");
+        } else {
+            console.error("메일 전송 실패");
+            Notify('메일 전송 실패', `서버 응답 오류: ${data.statusCode} ${data.body}`);
+        }
+    },
+    "ipc-get-mail-list-response": (data) => {
+        // console.log(data);
 
         if (data.statusCode !== 200) {
             Notify('메일 목록 로드 실패', `서버 응답 오류: ${data.statusCode} ${data.statusMessage}`);
@@ -46,7 +59,7 @@ const eventListeners = {
 
             if (apiResponse && Array.isArray(apiResponse.items)) {
                 mailList = apiResponse.items;
-                console.log(`모든 메일 목록 파싱 성공 (총 ${mailList.length}개):`, mailList);
+                // console.log(`모든 메일 목록 파싱 성공 (총 ${mailList.length}개):`, mailList);
 
                 UpdateMailListUI(mailList);
             } else {
@@ -54,12 +67,12 @@ const eventListeners = {
             }
 
         } catch (error) {
-            console.error('JSON 파싱 오류:', error);
+            // console.error('JSON 파싱 오류:', error);
             Notify('JSON 파싱 오류', '받은 데이터가 올바른 JSON 형식이 아닙니다.');
         }
     },
     "ipc-get-mail-content-response": (data) => {
-        console.log(data);
+        // console.log(data);
         if (data.statusCode !== 200) {
             let errorMessage = `서버 응답 오류: ${data.statusCode} ${data.statusMessage || ''}`;
             try {
@@ -70,7 +83,7 @@ const eventListeners = {
             } catch (e) {
                 // body가 JSON이 아니면 무시
             }
-            
+
             Notify('메일 상세 로드 실패', errorMessage);
             return;
         }
@@ -134,10 +147,12 @@ document.addEventListener("DOMContentLoaded", (ev) => {
         dom.serverPort.textContent = '8080';
 
     dom.refreshBtn.addEventListener('click', SyncMailList);
+    dom.mailWriteBtn.addEventListener('click', ViewMailWriter);
     dom.closePopupBtn.addEventListener('click', HideMailContent);
+    dom.closePopupBtn2.addEventListener('click', HideMailContent);
+    dom.sendBtn.addEventListener('click', PostMail);
 
     HideMailContent();
-
     SyncMailList();
 });
 
@@ -155,12 +170,14 @@ function SyncMailList() {
         }
     }));
 
-    console.log(`메일 목록 동기화 요청: ${user}@${hostname}:${port}`);
+    // console.log(`메일 목록 동기화 요청: ${user}@${hostname}:${port}`);
 }
 
 function HideMailContent() {
     if (dom.popupContainer) {
         dom.popupContainer.style.display = 'none';
+        dom.mailDetailView.style.display = 'none';
+        dom.mailWriterView.style.display = 'none';
     }
 }
 
@@ -192,7 +209,7 @@ function UpdateMailListUI(list) {
         dom.mailListContainer.appendChild(mailItem);
     });
 
-    console.log(`총 ${list.length}개의 메일 목록이 화면에 업데이트되었습니다.`);
+    // console.log(`총 ${list.length}개의 메일 목록이 화면에 업데이트되었습니다.`);
 }
 
 
@@ -214,11 +231,35 @@ function GetMailContent(mail_user, mail_index) {
         }
     }));
 
-    console.log(`메일 인덱스 ${mail_index} 상세 내용 요청`);
+    //console.log(`메일 인덱스 ${mail_index} 상세 내용 요청`);
 }
 
 
-function PostMail() { }
+function PostMail() {
+    const todom = document.querySelector('.mc-mail-writer-recipient-input');
+    const titledom = document.querySelector('.mc-mail-writer-title-input');
+    const bodydom = document.querySelector('.mc-mail-writer-content-input');
+
+    window.api.Send(JSON.stringify({
+        type: 'ipc-send-mail',
+        data: {
+            hostname: dom.serverHostName.textContent,
+            port: dom.serverPort.textContent,
+            mail: {
+                user: dom.user.textContent,
+                to: todom.value,
+                title: titledom.value,
+                body: bodydom.value
+            }
+        }
+    }));
+
+    todom.value = '';
+    titledom.value = '';
+    bodydom.value = '';
+
+    HideMailContent();
+}
 
 
 /**
@@ -274,7 +315,15 @@ function ViewMailContent(json) {
 
     if (dom.popupContainer) {
         dom.popupContainer.style.display = 'flex';
+        dom.mailDetailView.style.display = 'block';
     }
 
-    console.log(`메일 상세 내용 표시 완료: ${json.title} (팝업)`);
+    // console.log(`메일 상세 내용 표시 완료: ${json.title} (팝업)`);
+}
+
+function ViewMailWriter() {
+    if (dom.popupContainer) {
+        dom.popupContainer.style.display = 'flex';
+        dom.mailWriterView.style.display = 'block';
+    }
 }

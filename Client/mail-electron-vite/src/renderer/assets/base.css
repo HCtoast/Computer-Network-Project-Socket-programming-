@@ -48,20 +48,41 @@ header {
     flex-shrink: 0;
 }
 
-.mc-refresh-btn {
+.mc-view-mail-writer-btn {
     border: none;
     border-radius: 4px;
     box-shadow: none;
     margin-right: 15px;
 
-    background-color: transparent; 
-    color: #333; 
+    background-color: transparent;
+    color: #333;
     padding: 15px 30px;
 
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
 
     margin-left: auto;
+    margin-right: 0;
+    font-weight: 500;
+    font-size: 0.9rem;
+
+    flex-shrink: 0;
+}
+
+.mc-refresh-btn {
+    border: none;
+    border-radius: 4px;
+    box-shadow: none;
+    margin-right: 15px;
+
+    background-color: transparent;
+    color: #333;
+    padding: 15px 30px;
+
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+
+    margin-left: 0;
     margin-right: 0;
     font-weight: 500;
     font-size: 0.9rem;
@@ -79,6 +100,16 @@ header {
     color: #000;
 }
 
+.mc-view-mail-writer-btn:hover {
+    background-color: #f0f0f0;
+    color: #000;
+}
+
+.mc-view-mail-writer-btn:active {
+    background-color: #e0e0e0;
+    color: #000;
+}
+
 
 
 /* ---------- 메인 스타일 ---------- */
@@ -91,11 +122,11 @@ main {
 }
 
 .mc-mail-list-header {
-    display: grid; 
+    display: grid;
     grid-template-columns: 20% 20% 60%;
     align-items: center;
     white-space: nowrap;
-    
+
     padding: 10px 0;
     font-weight: bold;
     border-bottom: 3px solid #333;
@@ -104,7 +135,7 @@ main {
     padding-left: 25px;
 }
 
-.mc-mail-list-header > span {
+.mc-mail-list-header>span {
     padding: 0 10px;
 }
 
@@ -123,14 +154,15 @@ main {
     padding: 10px 0;
     border-bottom: 1px solid #e0e0e0;
     cursor: pointer;
-    display: grid; 
-    grid-template-columns: 20% 20% 60%; /* 보낸 사람(20), 받는 사람(20), 제목(60) */
+    display: grid;
+    grid-template-columns: 20% 20% 60%;
+    /* 보낸 사람(20), 받는 사람(20), 제목(60) */
     align-items: center;
     white-space: nowrap;
     padding-left: 25px;
 }
 
-.mc-mail-list-item > span {
+.mc-mail-list-item>span {
     padding: 0 10px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -168,7 +200,55 @@ main {
     overflow-y: auto;
 }
 
-.popup-close-btn {
+.mc-mail-writer-view {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 800px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.mc-mail-writer-view>div {
+    width: 100%;
+}
+
+.mc-mail-writer-view input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.mc-mail-writer-view textarea {
+    width: 100%;
+    height: 200px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    resize: vertical;
+    resize: none;
+}
+
+.mc-mail-send-btn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.popup-close-btn,
+.popup-close-btn2 {
     position: absolute;
     top: 10px;
     right: 10px;

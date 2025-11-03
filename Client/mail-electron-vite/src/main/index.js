@@ -82,7 +82,7 @@ app.on('window-all-closed', () => {
 
 const broadcastListeners = {
     "ipc-server-heartbeat": async ({ hostname, port }, webContents) => {
-        const response = await Request(hostname, port, '/api/resp', 'GET');
+        const response = await Request(hostname, port, '/api/resp', 'GET', { 'X-Expect-Server': 'MAILAPI' });
 
         webContents.send('broadcast', JSON.stringify({
             'type': 'ipc-server-heartbeat-response',
@@ -94,7 +94,7 @@ const broadcastListeners = {
         }));
     },
     "ipc-get-mail-list": async ({ hostname, port, user }, webContents) => {
-        const response = await Request(hostname, port, '/api/list', 'GET', { 'X-Expect-Server': 'MAILAPI', 'Host': '', 'X-User': user });
+        const response = await Request(hostname, port, '/api/list', 'GET', { 'X-Expect-Server': 'MAILAPI', 'X-User': user });
 
         webContents.send('broadcast', JSON.stringify({
             'type': 'ipc-get-mail-list-response',
@@ -106,10 +106,10 @@ const broadcastListeners = {
         }));
     },
     "ipc-get-mail-content": async ({ hostname, port, mailIndex }, webContents) => {
-        const response = await Request(hostname, port, `/api/mail/?index=${mailIndex}`, 'GET', { 'Accept': 'application:json' });
+        const response = await Request(hostname, port, `/api/mail/?index=${mailIndex}`, 'GET', { 'Accept': 'application:json', 'X-Expect-Server': 'MAILAPI' });
 
-        console.log(' mailIndex: ' + mailIndex);
-        console.log('response: ', response);
+        // console.log(' mailIndex: ' + mailIndex);
+        // console.log('response: ', response);
 
         webContents.send('broadcast', JSON.stringify({
             'type': 'ipc-get-mail-content-response',
@@ -121,7 +121,9 @@ const broadcastListeners = {
         }));
     },
     "ipc-send-mail": async ({ hostname, port, mail }, webContents) => {
-        const response = await Request(hostname, port, '/api/send/', 'POST', { 'Accept': 'application:json' }, mail); // mail includes author, receiver, title, content
+        // console.log('sending mail: ', mail);
+        const response = await Request(hostname, port, '/api/send', 'POST', { 'Accept': 'application:json', 'X-Expect-Server': 'MAILAPI', 'X-User': mail.user }, JSON.stringify(mail)); // mail includes author, receiver, title, content
+        // console.log('send mail response: ', response);
 
         webContents.send('broadcast', JSON.stringify({
             'ipc-send-mail-response': {
@@ -139,10 +141,14 @@ function Request(hostname, port = 8080, path = '/', method = "GET", headers = {}
     }
 
     // dependent for every request to mail server API /api/*
-    headers['X-Expect-Server'] = 'MAILAPI';
-    headers['Host'] = '';
+    // headers['X-Expect-Server'] = 'MAILAPI';
+    // headers['Host'] = '';
 
     if (body !== null) {
+        if (typeof body != 'string') {
+            body = JSON.stringify(body);
+        }
+
         headers['Content-Type'] = 'application/json';
         headers['Content-Length'] = Buffer.byteLength(body);
     }
@@ -154,6 +160,8 @@ function Request(hostname, port = 8080, path = '/', method = "GET", headers = {}
         method,
         headers
     };
+
+    // console.log(options);
 
     return new Promise((resolve, reject) => {
         const req = http.request(options, (res) => {
