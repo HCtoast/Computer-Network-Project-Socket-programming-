@@ -283,6 +283,11 @@ function MailListItem(json) {
     item.dataset.mail_user = json.user;
     item.dataset.mail_index = json.mail_index;
 
+    if (dom.user.textContent === json.user) {
+        // 보낸 메일
+        item.style.backgroundColor = '#e0f7fa';
+    }
+
     item.innerHTML = `
         <span class="mc-mail-sender">${json.user || '발신자 정보 없음'}</span>
         <span class="mc-mail-recipient">${json.to || '수신자 정보 없음'}</span>

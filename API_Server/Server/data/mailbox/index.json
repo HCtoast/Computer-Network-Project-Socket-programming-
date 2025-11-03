@@ -1,5 +1,5 @@
 {
-    "total":7,
+    "total":8,
     "items": [
         {
             "user": "alice",
@@ -22,4 +22,4 @@
             "mail_index": 3,
             "title": "회의 일정 공유3"
         }
-    ,{"user":"alice","date":"2025-10-31T06:22:01Z","mail_index":4, "to":"jack", "title":"회의 일정 공유4"},{"user":"alice","date":"2025-11-03T05:05:09Z","mail_index":5, "to":"jack", "title":"test"},{"user":"alice","date":"2025-11-03T05:06:21Z","mail_index":6, "to":"jack", "title":"hi"},{"user":"alice","date":"2025-11-03T05:07:21Z","mail_index":7, "to":"jack", "title":"testmail"}]}
+    ,{"user":"alice","date":"2025-10-31T06:22:01Z","mail_index":4, "to":"jack", "title":"회의 일정 공유4"},{"user":"alice","date":"2025-11-03T05:05:09Z","mail_index":5, "to":"jack", "title":"test"},{"user":"alice","date":"2025-11-03T05:06:21Z","mail_index":6, "to":"jack", "title":"hi"},{"user":"alice","date":"2025-11-03T05:07:21Z","mail_index":7, "to":"jack", "title":"testmail"},{"user":"alice","date":"2025-11-03T05:09:42Z","mail_index":8, "to":"jack", "title":"testmail2"}]}
